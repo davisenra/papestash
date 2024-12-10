@@ -10,12 +10,12 @@ import (
 	"github.com/disintegration/imaging"
 )
 
-type ImageAnalyzer struct {
+type Processor struct {
 	img      image.Image
 	filePath string
 }
 
-func NewImageAnalyzer(imagePath string) (*ImageAnalyzer, error) {
+func NewImageAnalyzer(imagePath string) (*Processor, error) {
 	file, err := os.Open(imagePath)
 	if err != nil {
 		return nil, err
@@ -27,18 +27,18 @@ func NewImageAnalyzer(imagePath string) (*ImageAnalyzer, error) {
 		return nil, err
 	}
 
-	return &ImageAnalyzer{img: img, filePath: imagePath}, nil
+	return &Processor{img: img, filePath: imagePath}, nil
 }
 
-func (ia *ImageAnalyzer) GetWidth() int {
+func (ia *Processor) GetWidth() int {
 	return ia.img.Bounds().Max.X
 }
 
-func (ia *ImageAnalyzer) GetHeight() int {
+func (ia *Processor) GetHeight() int {
 	return ia.img.Bounds().Max.Y
 }
 
-func (ia *ImageAnalyzer) GetAspectRatio() string {
+func (ia *Processor) GetAspectRatio() string {
 	width := ia.GetWidth()
 	height := ia.GetHeight()
 	ratio := float64(width) / float64(height)
@@ -69,7 +69,7 @@ func (ia *ImageAnalyzer) GetAspectRatio() string {
 	return closestRatio
 }
 
-func (ia *ImageAnalyzer) GetSize() (int64, error) {
+func (ia *Processor) GetSize() (int64, error) {
 	fileInfo, err := os.Stat(ia.filePath)
 	if err != nil {
 		return 0, err
@@ -77,7 +77,7 @@ func (ia *ImageAnalyzer) GetSize() (int64, error) {
 	return fileInfo.Size(), nil
 }
 
-func (ia *ImageAnalyzer) GetMostFrequentColor(downsampleFactor int) string {
+func (ia *Processor) GetMostFrequentColor(downSampleFactor int) string {
 	colorFrequency := make(map[string]int)
 
 	bounds := ia.img.Bounds()
@@ -86,8 +86,8 @@ func (ia *ImageAnalyzer) GetMostFrequentColor(downsampleFactor int) string {
 	var wg sync.WaitGroup
 	mu := sync.Mutex{}
 
-	for y := 0; y < height; y += downsampleFactor {
-		for x := 0; x < width; x += downsampleFactor {
+	for y := 0; y < height; y += downSampleFactor {
+		for x := 0; x < width; x += downSampleFactor {
 			wg.Add(1)
 			go func(x, y int) {
 				defer wg.Done()
@@ -116,7 +116,7 @@ func (ia *ImageAnalyzer) GetMostFrequentColor(downsampleFactor int) string {
 	return mostFrequentColor
 }
 
-func (ia *ImageAnalyzer) GenerateThumbnail(newWidth int) (image.Image, error) {
+func (ia *Processor) GenerateThumbnail(newWidth int) (image.Image, error) {
 	bounds := ia.img.Bounds()
 	width, height := bounds.Max.X, bounds.Max.Y
 	aspectRatio := float64(width) / float64(height)

@@ -1,18 +1,31 @@
 package handlers
 
 import (
+	"github.com/davisenra/papestash/api/repository"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-func GetWallpapers(c *gin.Context) {
+type WallpaperHandler struct {
+	WallRepo *repository.WallpaperRepository
+}
+
+func (h *WallpaperHandler) GetWallpapers(c *gin.Context) {
+	wallpapers, err := h.WallRepo.GetAll()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": "TO BE IMPLEMENTED",
+		"data": wallpapers,
 	})
 }
 
-func UploadWallpaper(c *gin.Context) {
+func (h *WallpaperHandler) UploadWallpaper(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "TO BE IMPLEMENTED",
 	})
