@@ -40,6 +40,11 @@ func (r *WallpaperRepository) GetAll() ([]Wallpaper, error) {
 		}
 		wallpapers = append(wallpapers, w)
 	}
+
+	if len(wallpapers) == 0 {
+		return []Wallpaper{}, nil
+	}
+
 	return wallpapers, rows.Err()
 }
 
@@ -47,11 +52,13 @@ func (r *WallpaperRepository) GetById(id int) (*Wallpaper, error) {
 	var w Wallpaper
 	err := r.db.QueryRow("SELECT id, name, path, thumbnail_path, height, width, size_in_bytes, created_at FROM wallpapers WHERE id = ?", id).
 		Scan(&w.Id, &w.Name, &w.Path, &w.ThumbnailPath, &w.Height, &w.Width, &w.SizeInBytes, &w.CreatedAt)
+
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
 	}
+
 	return &w, nil
 }
 
@@ -61,10 +68,12 @@ func (r *WallpaperRepository) Create(w Wallpaper) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	id, err := result.LastInsertId()
 	if err != nil {
 		return 0, err
 	}
+
 	return int(id), nil
 }
 
@@ -73,12 +82,15 @@ func (r *WallpaperRepository) Delete(id int) error {
 	if err != nil {
 		return err
 	}
+
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return err
 	}
+
 	if rowsAffected == 0 {
 		return errors.New("no rows affected")
 	}
+
 	return nil
 }

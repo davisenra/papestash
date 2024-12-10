@@ -1,8 +1,9 @@
 package handlers
 
 import (
-	"github.com/davisenra/papestash/api/repository"
 	"net/http"
+
+	"github.com/davisenra/papestash/api/repository"
 
 	"github.com/gin-gonic/gin"
 )
