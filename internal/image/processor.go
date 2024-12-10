@@ -5,6 +5,7 @@ import (
 	"image"
 	"math"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/disintegration/imaging"
@@ -15,7 +16,7 @@ type Processor struct {
 	filePath string
 }
 
-func NewImageAnalyzer(imagePath string) (*Processor, error) {
+func NewImageProcessor(imagePath string) (*Processor, error) {
 	file, err := os.Open(imagePath)
 	if err != nil {
 		return nil, err
@@ -36,6 +37,10 @@ func (ia *Processor) GetWidth() int {
 
 func (ia *Processor) GetHeight() int {
 	return ia.img.Bounds().Max.Y
+}
+
+func (ia *Processor) GetExtension() string {
+	return filepath.Ext(ia.filePath)
 }
 
 func (ia *Processor) GetAspectRatio() string {
