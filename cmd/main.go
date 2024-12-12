@@ -24,8 +24,8 @@ func main() {
 	}
 
 	r := gin.Default()
-	// see: https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies
-	r.SetTrustedProxies(nil)
+	r.MaxMultipartMemory = 16 << 20 // 16 MiB
+	r.SetTrustedProxies(nil)        // see: https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies
 	gin.DisableConsoleColor()
 
 	appContext := context.AppContext{

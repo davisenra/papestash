@@ -7,12 +7,12 @@ import (
 )
 
 func RegisterRoutes(appCtx *context.AppContext) {
-	wallHandler := handlers.WallpaperHandler{
+	wallpapersHandler := handlers.WallpaperHandler{
 		WallRepo: repository.NewWallpaperRepository(appCtx.Database.Connection),
 	}
 
 	api := appCtx.HttpServer.Group("/api/v1")
-	api.POST("/login", handlers.Login)
-	api.GET("/wallpapers", wallHandler.GetWallpapers)
-	api.POST("/wallpapers", wallHandler.UploadWallpaper)
+	api.POST("/login", handlers.Handle(handlers.Login))
+	api.GET("/wallpapers", handlers.Handle(wallpapersHandler.GetWallpapers))
+	api.POST("/wallpapers", handlers.Handle(wallpapersHandler.UploadWallpaper))
 }

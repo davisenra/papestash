@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/disintegration/imaging"
@@ -40,7 +41,8 @@ func (ia *Processor) GetHeight() int {
 }
 
 func (ia *Processor) GetExtension() string {
-	return filepath.Ext(ia.filePath)
+	ext := filepath.Ext(ia.filePath)
+	return strings.Replace(ext, ".", "", 1)
 }
 
 func (ia *Processor) GetAspectRatio() string {
@@ -74,12 +76,9 @@ func (ia *Processor) GetAspectRatio() string {
 	return closestRatio
 }
 
-func (ia *Processor) GetSize() (int64, error) {
-	fileInfo, err := os.Stat(ia.filePath)
-	if err != nil {
-		return 0, err
-	}
-	return fileInfo.Size(), nil
+func (ia *Processor) GetSize() int64 {
+	fileInfo, _ := os.Stat(ia.filePath) // os.Stat might return an error, but hopefully it doesn't
+	return fileInfo.Size()
 }
 
 func (ia *Processor) GetMostFrequentColor(downSampleFactor int) string {
