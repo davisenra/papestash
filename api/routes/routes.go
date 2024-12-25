@@ -15,4 +15,5 @@ func RegisterRoutes(appCtx *context.AppContext) {
 	api.POST("/login", handlers.Handle(handlers.Login))
 	api.GET("/wallpapers", handlers.Handle(wallpapersHandler.GetWallpapers))
 	api.POST("/wallpapers", handlers.Handle(wallpapersHandler.UploadWallpaper))
+	api.DELETE("/wallpapers/:id", handlers.Handle(wallpapersHandler.DeleteWallpaper))
 }

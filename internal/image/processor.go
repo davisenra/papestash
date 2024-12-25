@@ -12,6 +12,8 @@ import (
 	"github.com/disintegration/imaging"
 )
 
+const DEFAULT_DOWNSAMPLE_FACTOR = 8
+
 type Processor struct {
 	img      image.Image
 	filePath string
@@ -32,22 +34,22 @@ func NewImageProcessor(imagePath string) (*Processor, error) {
 	return &Processor{img: img, filePath: imagePath}, nil
 }
 
-func (ia *Processor) GetWidth() int {
+func (ia *Processor) Width() int {
 	return ia.img.Bounds().Max.X
 }
 
-func (ia *Processor) GetHeight() int {
+func (ia *Processor) Height() int {
 	return ia.img.Bounds().Max.Y
 }
 
-func (ia *Processor) GetExtension() string {
+func (ia *Processor) Extension() string {
 	ext := filepath.Ext(ia.filePath)
 	return strings.Replace(ext, ".", "", 1)
 }
 
-func (ia *Processor) GetAspectRatio() string {
-	width := ia.GetWidth()
-	height := ia.GetHeight()
+func (ia *Processor) AspectRatio() string {
+	width := ia.Width()
+	height := ia.Height()
 	ratio := float64(width) / float64(height)
 
 	commonRatios := []struct {
@@ -76,12 +78,12 @@ func (ia *Processor) GetAspectRatio() string {
 	return closestRatio
 }
 
-func (ia *Processor) GetSize() int64 {
+func (ia *Processor) Size() int {
 	fileInfo, _ := os.Stat(ia.filePath) // os.Stat might return an error, but hopefully it doesn't
-	return fileInfo.Size()
+	return int(fileInfo.Size())
 }
 
-func (ia *Processor) GetMostFrequentColor(downSampleFactor int) string {
+func (ia *Processor) MostFrequentColor(downSampleFactor int) string {
 	colorFrequency := make(map[string]int)
 
 	bounds := ia.img.Bounds()
