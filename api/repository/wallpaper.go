@@ -2,7 +2,7 @@ package repository
 
 import (
 	"database/sql"
-	"errors"
+	"fmt"
 	"time"
 )
 
@@ -27,8 +27,31 @@ func NewWallpaperRepository(db *sql.DB) *WallpaperRepository {
 	return &WallpaperRepository{db: db}
 }
 
-func (r *WallpaperRepository) GetAll() ([]Wallpaper, error) {
-	rows, err := r.db.Query("SELECT id, name, path, thumbnail_path, most_frequent_color, height, width, aspect_ratio, size_in_bytes, created_at FROM wallpapers")
+type Filter func(query string, args []interface{}) (string, []interface{})
+
+func (r *WallpaperRepository) GetAll(filters ...Filter) ([]Wallpaper, error) {
+	query := `
+		SELECT 
+			id, 
+			name, 
+			path, 
+			thumbnail_path, 
+			most_frequent_color, 
+			height, 
+			width, 
+			aspect_ratio, 
+			size_in_bytes, 
+			created_at 
+		FROM 
+			wallpapers
+	`
+	var args []interface{}
+
+	for _, filter := range filters {
+		query, args = filter(query, args)
+	}
+
+	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -51,15 +74,42 @@ func (r *WallpaperRepository) GetAll() ([]Wallpaper, error) {
 }
 
 func (r *WallpaperRepository) GetById(id int) (*Wallpaper, error) {
-	var w Wallpaper
-	err := r.db.QueryRow(`
-		SELECT id, name, path, thumbnail_path, most_frequent_color, height, width, aspect_ratio, size_in_bytes, created_at
-		FROM wallpapers WHERE id = ?`, id).
-		Scan(&w.Id, &w.Name, &w.Path, &w.ThumbnailPath, &w.MostFrequentColor, &w.Height, &w.Width, &w.AspectRatio, &w.SizeInBytes, &w.CreatedAt)
+	query := `
+        SELECT 
+            id, 
+            name, 
+            path, 
+            thumbnail_path, 
+            most_frequent_color, 
+            height, 
+            width, 
+            aspect_ratio, 
+            size_in_bytes, 
+            created_at 
+        FROM 
+            wallpapers 
+        WHERE 
+            id = ?
+    `
 
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
-	} else if err != nil {
+	var w Wallpaper
+	err := r.db.QueryRow(query, id).Scan(
+		&w.Id,
+		&w.Name,
+		&w.Path,
+		&w.ThumbnailPath,
+		&w.MostFrequentColor,
+		&w.Height,
+		&w.Width,
+		&w.AspectRatio,
+		&w.SizeInBytes,
+		&w.CreatedAt,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("wallpaper with ID %d not found", id)
+		}
 		return nil, err
 	}
 
@@ -67,10 +117,24 @@ func (r *WallpaperRepository) GetById(id int) (*Wallpaper, error) {
 }
 
 func (r *WallpaperRepository) Create(w Wallpaper) (int, error) {
-	result, err := r.db.Exec(`
-		INSERT INTO wallpapers (name, path, thumbnail_path, most_frequent_color, height, width, aspect_ratio, size_in_bytes, created_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		w.Name, w.Path, w.ThumbnailPath, w.MostFrequentColor, w.Height, w.Width, w.AspectRatio, w.SizeInBytes, w.CreatedAt)
+	query := `
+        INSERT INTO wallpapers (
+            name, 
+            path, 
+            thumbnail_path, 
+            most_frequent_color, 
+            height, 
+            width, 
+            aspect_ratio, 
+            size_in_bytes, 
+            created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `
+
+	result, err := r.db.Exec(
+		query,
+		w.Name, w.Path, w.ThumbnailPath, w.MostFrequentColor, w.Height, w.Width, w.AspectRatio, w.SizeInBytes, w.CreatedAt,
+	)
 	if err != nil {
 		return 0, err
 	}
@@ -97,8 +161,24 @@ func (r *WallpaperRepository) Delete(id int) error {
 	}
 
 	if rowsAffected == 0 {
-		return errors.New("no rows affected")
+		return fmt.Errorf("no rows affected")
 	}
 
 	return nil
+}
+
+func FilterByAspectRatio(aspectRatio string) Filter {
+	return func(query string, args []interface{}) (string, []interface{}) {
+		query += " WHERE aspect_ratio = ?"
+		args = append(args, aspectRatio)
+		return query, args
+	}
+}
+
+func FilterBySize(minSize, maxSize int) Filter {
+	return func(query string, args []interface{}) (string, []interface{}) {
+		query += " WHERE size_in_bytes BETWEEN ? AND ?"
+		args = append(args, minSize, maxSize)
+		return query, args
+	}
 }

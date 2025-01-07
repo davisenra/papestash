@@ -23,7 +23,25 @@ type WallpaperHandler struct {
 }
 
 func (h *WallpaperHandler) GetWallpapers(c *gin.Context) error {
-	wallpapers, err := h.WallRepo.GetAll()
+	aspectRatio := c.Query("aspect_ratio")
+	minSize := c.Query("min_size")
+	maxSize := c.Query("max_size")
+
+	var filters []repository.Filter
+
+	if aspectRatio != "" {
+		filters = append(filters, repository.FilterByAspectRatio(aspectRatio))
+	}
+
+	if minSize != "" && maxSize != "" {
+		minSizeInt, err1 := strconv.Atoi(minSize)
+		maxSizeInt, err2 := strconv.Atoi(maxSize)
+		if err1 == nil && err2 == nil {
+			filters = append(filters, repository.FilterBySize(minSizeInt, maxSizeInt))
+		}
+	}
+
+	wallpapers, err := h.WallRepo.GetAll(filters...)
 
 	if err != nil {
 		return err
