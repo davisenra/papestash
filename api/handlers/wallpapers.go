@@ -53,14 +53,17 @@ func (h *WallpaperHandler) GetWallpapers(c *gin.Context) error {
 		perPage = 25
 	}
 
-	wallpapers, err := h.WallRepo.GetAll(page, perPage, filters...)
-
+	result, err := h.WallRepo.GetAll(page, perPage, filters...)
 	if err != nil {
 		return err
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"wallpapers": wallpapers,
+		"wallpapers":  result.Wallpapers,
+		"page":        result.Page,
+		"per_page":    result.PerPage,
+		"total_pages": result.TotalPages,
+		"total_count": result.TotalCount,
 	})
 
 	return nil

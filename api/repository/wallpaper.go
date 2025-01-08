@@ -29,7 +29,15 @@ func NewWallpaperRepository(db *sql.DB) *WallpaperRepository {
 
 type Filter func(query string, args []interface{}) (string, []interface{})
 
-func (r *WallpaperRepository) GetAll(page int, perPage int, filters ...Filter) ([]Wallpaper, error) {
+type PaginatedWallpapers struct {
+	Wallpapers []Wallpaper `json:"wallpapers"`
+	Page       int         `json:"page"`
+	PerPage    int         `json:"per_page"`
+	TotalPages int         `json:"total_pages"`
+	TotalCount int         `json:"total_count"`
+}
+
+func (r *WallpaperRepository) GetAll(page, perPage int, filters ...Filter) (*PaginatedWallpapers, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -39,28 +47,38 @@ func (r *WallpaperRepository) GetAll(page int, perPage int, filters ...Filter) (
 
 	offset := (page - 1) * perPage
 
-	query := `
-		SELECT 
-			id, 
-			name, 
-			path, 
-			thumbnail_path, 
-			most_frequent_color, 
-			height, 
-			width, 
-			aspect_ratio, 
-			size_in_bytes, 
-			created_at 
-		FROM 
-			wallpapers
-	`
+	baseQuery := `
+        SELECT 
+            id, 
+            name, 
+            path, 
+            thumbnail_path, 
+            most_frequent_color, 
+            height, 
+            width, 
+            aspect_ratio, 
+            size_in_bytes, 
+            created_at 
+        FROM 
+            wallpapers
+    `
+	countQuery := `SELECT COUNT(*) FROM wallpapers`
+
 	var args []interface{}
+	var countArgs []interface{}
 
 	for _, filter := range filters {
-		query, args = filter(query, args)
+		baseQuery, args = filter(baseQuery, args)
+		countQuery, countArgs = filter(countQuery, countArgs)
 	}
 
-	query += " LIMIT ? OFFSET ?"
+	var totalCount int
+	err := r.db.QueryRow(countQuery, countArgs...).Scan(&totalCount)
+	if err != nil {
+		return nil, err
+	}
+
+	query := baseQuery + " LIMIT ? OFFSET ?"
 	args = append(args, perPage, offset)
 
 	rows, err := r.db.Query(query, args...)
@@ -78,11 +96,15 @@ func (r *WallpaperRepository) GetAll(page int, perPage int, filters ...Filter) (
 		wallpapers = append(wallpapers, w)
 	}
 
-	if len(wallpapers) == 0 {
-		return []Wallpaper{}, nil
-	}
+	totalPages := (totalCount + perPage - 1) / perPage
 
-	return wallpapers, rows.Err()
+	return &PaginatedWallpapers{
+		Wallpapers: wallpapers,
+		Page:       page,
+		PerPage:    perPage,
+		TotalPages: totalPages,
+		TotalCount: totalCount,
+	}, nil
 }
 
 func (r *WallpaperRepository) GetById(id int) (*Wallpaper, error) {
