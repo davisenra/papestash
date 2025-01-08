@@ -29,7 +29,16 @@ func NewWallpaperRepository(db *sql.DB) *WallpaperRepository {
 
 type Filter func(query string, args []interface{}) (string, []interface{})
 
-func (r *WallpaperRepository) GetAll(filters ...Filter) ([]Wallpaper, error) {
+func (r *WallpaperRepository) GetAll(page int, perPage int, filters ...Filter) ([]Wallpaper, error) {
+	if page < 1 {
+		page = 1
+	}
+	if perPage <= 0 {
+		perPage = 25
+	}
+
+	offset := (page - 1) * perPage
+
 	query := `
 		SELECT 
 			id, 
@@ -50,6 +59,9 @@ func (r *WallpaperRepository) GetAll(filters ...Filter) ([]Wallpaper, error) {
 	for _, filter := range filters {
 		query, args = filter(query, args)
 	}
+
+	query += " LIMIT ? OFFSET ?"
+	args = append(args, perPage, offset)
 
 	rows, err := r.db.Query(query, args...)
 	if err != nil {

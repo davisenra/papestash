@@ -26,6 +26,8 @@ func (h *WallpaperHandler) GetWallpapers(c *gin.Context) error {
 	aspectRatio := c.Query("aspect_ratio")
 	minSize := c.Query("min_size")
 	maxSize := c.Query("max_size")
+	pageStr := c.Query("page")
+	perPageStr := c.Query("per_page")
 
 	var filters []repository.Filter
 
@@ -41,7 +43,17 @@ func (h *WallpaperHandler) GetWallpapers(c *gin.Context) error {
 		}
 	}
 
-	wallpapers, err := h.WallRepo.GetAll(filters...)
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	perPage, err := strconv.Atoi(perPageStr)
+	if err != nil || perPage <= 0 {
+		perPage = 25
+	}
+
+	wallpapers, err := h.WallRepo.GetAll(page, perPage, filters...)
 
 	if err != nil {
 		return err
